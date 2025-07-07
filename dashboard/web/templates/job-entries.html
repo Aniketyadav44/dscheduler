@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Job Runs</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="stylesheet" href="/static/css/job-entries.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="nav-title" onclick="location.href='/jobs?page=1&limit=10'">Job #{{.JobId}} - Runs</div>
+    </header>
+
+    <main class="dashboard-content">
+      <h1>Job Execution History</h1>
+        <div class="filter-form">
+        <label for="status-filter">Filter by Status:</label>
+        <select id="status-filter">
+          <option value="">All</option>
+          <option value="completed" {{if eq .Filter "completed"}}selected{{end}}>Completed</option>
+          <option value="failed" {{if eq .Filter "failed"}}selected{{end}}>Failed</option>
+          <option value="permanently_failed" {{if eq .Filter "permanently_failed"}}selected{{end}}>Permanently Failed</option>
+        </select>
+      </div>
+      <table border="1" cellpadding="8">
+        <tr>
+          <th>Entry ID</th>
+          <th>Status</th>
+          <th>Output</th>
+          <th>Error</th>
+          <th>Scheduled At</th>
+          <th>Completed At</th>
+        </tr>
+        {{range .Entries}}
+        <tr>
+          <td>{{.Id}}</td>
+          <td>{{.Status}}</td>
+          <td>{{if .Output.Valid}}
+          {{.Output.String}}{{end}}</td>
+          <td>{{if .Error.Valid}}
+          {{.Error.String}}{{end}}</td>
+          <td>{{.ScheduledAt}}</td>
+          <td>{{.CompletedAt}}</td>
+        </tr>
+        {{end}}
+      </table>
+      <div class="pagination-controls">
+        {{if gt .Prev 0}}<a
+          href="/jobs/runs?id={{.JobId}}&page={{.Prev}}&limit={{.Limit}}"
+          class="page-link"
+          >< Previous</a
+        >{{end}}
+        <a href="/jobs/runs?id={{.JobId}}&page={{.Next}}&limit={{.Limit}}" class="page-link"
+          >Next ></a
+        >
+      </div>
+    </main>
+  </body>
+  <script>
+    const filterSelection = document.getElementById('status-filter')
+    const url = new URL(window.location.href);
+    filterSelection.value = url.searchParams.get('status') ?? ""
+    document.getElementById('status-filter').addEventListener('change', function () {
+    const selectedStatus = this.value;
+
+    const url = new URL(window.location.href);
+    if (selectedStatus) {
+      url.searchParams.set('status', selectedStatus);
+    } else {
+      url.searchParams.delete('status');
+    }
+
+    window.location.href = url.toString();
+  });
+  </script>
+</html>

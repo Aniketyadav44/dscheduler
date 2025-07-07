@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cron Scheduler Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="nav-title">Cron Scheduler</div>
+      <div class="nav-buttons">
+        <button onclick="location.href='/jobs/new'">Create New Job</button>
+        <button onclick="location.href='/jobs?page=1&limit=10'">
+          List All Jobs
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard-content">
+      <h1>Dashboard</h1>
+
+      <!-- <div class="card-container">
+        <div class="card total">
+          <h2>Total Jobs</h2>
+          <p>{{.Total}}</p>
+        </div>
+        <div class="card completed">
+          <h2>Completed</h2>
+          <p>{{.CompletedCount}}</p>
+        </div>
+        <div class="card failed">
+          <h2>Failed</h2>
+          <p>{{.FailedCount}}</p>
+        </div>
+      </div> -->
+    </main>
+  </body>
+  <script>
+    const alertMsg = "{{.AlertMessage}}";
+    if (alertMsg && alertMsg !== "<nil>") {
+      alert(alertMsg);
+    }
+  </script>
+</html>

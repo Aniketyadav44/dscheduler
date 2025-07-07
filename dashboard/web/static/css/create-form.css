@@ -1,0 +1,82 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  margin: 0;
+  background-color: #f0f2f5;
+  color: #333;
+}
+
+.navbar {
+  background-color: #1e293b;
+  padding: 15px 25px;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.dashboard-content {
+  padding: 30px;
+  max-width: 600px;
+  margin: auto;
+  background-color: #ffffff;
+  border-radius: 10px;
+  margin-top: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+form label {
+  display: block;
+  margin-top: 15px;
+  font-weight: 600;
+}
+
+form select,
+form input,
+form textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+form button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+form button:hover {
+  background-color: #2563eb;
+}
+
+.time-select-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.time-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-group label {
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+
+select {
+  padding: 4px 6px;
+  min-width: 60px;
+}
+
+textarea {
+  resize: vertical;
+}

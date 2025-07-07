@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Create New Job</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="stylesheet" href="/static/css/create-form.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <a href="/" class="nav-title">Cron Scheduler</a>
+    </header>
+
+    <main class="dashboard-content">
+      <h1>Create New Job</h1>
+      <form
+        method="POST"
+        action="/api/v1/job/create"
+        onsubmit="addTimezoneToForm()"
+      >
+        <label>Repeat every day at:</label>
+        <div class="time-select-row">
+          <div class="time-group">
+            <label for="hour">Hour</label>
+            <select name="hour" id="hour" required>
+              {{range $i := .Hours}}
+              <option value="{{$i}}">{{$i}}</option>
+              {{end}}
+            </select>
+          </div>
+          <span>:</span>
+          <div class="time-group">
+            <label for="minute">Minute</label>
+            <select name="minute" id="minute" required>
+              {{range $i := .Minutes}}
+              <option value="{{$i}}">{{$i}}</option>
+              {{end}}
+            </select>
+          </div>
+        </div>
+        <br />
+
+        <label>Task Type:</label>
+        <select name="type" id="taskType" onchange="updateFields()">
+          <option value="ping">Ping URL</option>
+          <option value="email">Send Email</option>
+          <option value="slack">Send Slack Message</option>
+          <option value="webhook">Trigger Webhook</option>
+        </select>
+
+        <div id="taskFields"></div>
+
+        <br />
+        <button type="submit">Create Job</button>
+        {{ if .ErrorMessage }}
+        <p class="alert">{{ .ErrorMessage }}</p>
+        {{ end }}
+        <!-- for tracking timezone -->
+        <input type="hidden" name="timezone" id="timezone" />
+      </form>
+    </main>
+
+    <script>
+      function updateFields() {
+        const type = document.getElementById("taskType").value;
+        const container = document.getElementById("taskFields");
+        container.innerHTML = "";
+
+        if (type === "ping") {
+          container.innerHTML = `
+          <label>URL:</label>
+          <input type="text" name="url" required />
+        `;
+        } else if (type === "email") {
+          container.innerHTML = `
+          <label>To Email:</label>
+          <input type="email" name="email" required />
+          <label>Subject:</label>
+          <input type="text" name="subject" required />
+          <label>Body:</label>
+          <textarea name="body" required></textarea>
+        `;
+        } else if (type === "slack") {
+          container.innerHTML = `
+          <label>Slack URL:</label>
+          <input type="text" name="url" required />
+          <label>Message Text:</label>
+          <textarea name="msg" required></textarea>
+        `;
+        } else if (type === "webhook") {
+          container.innerHTML = `
+          <label>Endpoint URL:</label>
+          <input type="text" name="url" required />
+          <label>Message Body:</label>
+          <textarea name="body" required></textarea>
+        `;
+        }
+      }
+
+      function addTimezoneToForm() {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        document.getElementById("timezone").value = timezone;
+      }
+
+      window.onload = updateFields;
+    </script>
+  </body>
+</html>

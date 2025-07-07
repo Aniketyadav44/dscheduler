@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>All Scheduled Jobs</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="stylesheet" href="/static/css/list-jobs.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="nav-title" onclick="location.href='/'">Cron Scheduler</div>
+    </header>
+
+    <main class="dashboard-content">
+      <h1>Scheduled Jobs</h1>
+      <table border="1" cellpadding="8">
+        <tr>
+          <th>ID</th>
+          <th>Type</th>
+          <th>UTC Time</th>
+          <th>Payload</th>
+          <th>Retries</th>
+          <th>Created At</th>
+          <th>Updated At</th>
+          <th>Actions</th>
+        </tr>
+        {{range .Jobs}}
+        <tr>
+          <td>{{.Id}}</td>
+          <td>{{.Type}}</td>
+          <td>{{printf "%02d:%02d" .Hour .Minute}}</td>
+          <td>{{.Payload}}</td>
+          <td>{{.Retries}}</td>
+          <td>{{.CreatedAt}}</td>
+          <td>{{.UpdatedAt}}</td>
+          <td>
+            <a href="/jobs/runs?id={{.Id}}&page=1&limit=10">View Runs</a>
+            <form method="POST" action="/api/v1/job/delete?id={{.Id}}">
+              <button
+                style="
+                  background-color: #e53935;
+                  color: white;
+                  border: none;
+                  padding: 8px 12px;
+                  border-radius: 4px;
+                  font-size: 14px;
+                  margin-top: 6px;
+                  display: inline-block;
+                "
+                type="submit"
+              >
+                Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </table>
+      <div class="pagination-controls">
+        {{if gt .Prev 0}}<a
+          href="/jobs?page={{.Prev}}&limit={{.Limit}}"
+          class="page-link"
+          >< Previous</a
+        >{{end}}
+        <a href="/jobs?page={{.Next}}&limit={{.Limit}}" class="page-link"
+          >Next ></a
+        >
+      </div>
+    </main>
+  </body>
+</html>
