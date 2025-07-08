@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/Aniketyadav44/dscheduler/worker/internal/models"
 )
@@ -20,7 +21,10 @@ func processWebhookJob(job *models.Job) (string, error) {
 		return "", fmt.Errorf("invalid body: %s", job.Payload["body"])
 	}
 
-	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	res, err := client.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
 	if err != nil {
 		return "", fmt.Errorf("error calling POST: %s", err.Error())
 	}

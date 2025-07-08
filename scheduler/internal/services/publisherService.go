@@ -49,7 +49,14 @@ func (p *Publisher) Start() {
 				// leading to mismatch i.e job's time is 04:07:00:0000 mismatches to ticker's time 04:06:59:9999
 				// so we track our own next interval by adding a minute to the previous time and re-using it always
 				timeForNextInterval = timeForNextInterval.Add(POLLING_PERIOD)
-				p.publishToStream(timeForNextInterval)
+				// looping to publish, since we are fetching limited jobs from ZSET at a time.
+				// So it will loop and fetch until there are no jobs
+				for {
+					hasMoreJobs, err := p.publishToStream(timeForNextInterval)
+					if !hasMoreJobs || err != nil {
+						break
+					}
+				}
 			}
 		}
 	}()
@@ -60,7 +67,7 @@ func (p *Publisher) Stop() {
 	p.done <- true
 }
 
-func (p *Publisher) publishToStream(t time.Time) error {
+func (p *Publisher) publishToStream(t time.Time) (bool, error) {
 	log.Println("PUBLISHER: publishing for:", t)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -73,8 +80,9 @@ func (p *Publisher) publishToStream(t time.Time) error {
 		local key = KEYS[1]
 		local min = ARGV[1]
 		local max = ARGV[2]
+		local limit = tonumber(ARGV[3])
 
-		local members = redis.call("ZRANGEBYSCORE", key, min, max)
+		local members = redis.call("ZRANGEBYSCORE", key, min, max, "LIMIT", 0, limit)
 		if #members > 0 then
 			redis.call("ZREM", key, unpack(members))
 		end
@@ -85,33 +93,42 @@ func (p *Publisher) publishToStream(t time.Time) error {
 	jobScore := t.Unix()
 	min := fmt.Sprintf("%d", jobScore)
 	max := fmt.Sprintf("%d", jobScore)
-	res, err := p.redis.Eval(ctx, script, []string{REDIS_JOBS_ZSET_KEY}, min, max).Result()
+	limit := 100
+	res, err := p.redis.Eval(ctx, script, []string{REDIS_JOBS_ZSET_KEY}, min, max, limit).Result()
 	if err != nil {
-		return err
+		log.Printf("PUBLISHER: error in executing lua script: %s", err.Error())
+		return false, err
 	}
 
 	// checking if we have got results
 	members, ok := res.([]any)
 	if !ok {
-		return fmt.Errorf("invalid results from script")
+		return false, fmt.Errorf("invalid results from script")
 	}
 	if len(members) == 0 {
 		log.Printf("PUBLISHER: no jobs found for %d:%d at score: %d\n", t.Hour(), t.Minute(), jobScore)
-		return nil
+		return false, nil
 	}
 
 	// publishing the jobs to redis stream
+	pipe := p.redis.Pipeline()
 	for _, member := range members {
 		// fmt.Println(member)
-		err := p.redis.XAdd(context.Background(), &redis.XAddArgs{
+		pipe.XAdd(ctx, &redis.XAddArgs{
 			Stream: REDIS_JOBS_STREAM_KEY,
 			Values: map[string]any{
 				"job": member,
 			},
-		}).Err()
-		if err != nil {
-			log.Printf("PUBLISHER: Failed to publish job: %s\n", member)
-		}
+		})
 	}
-	return nil
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		log.Printf("PUBLISHER: Failed to publish job with pipeline: %s\n", err.Error())
+	}
+
+	hasMoreJobs := true
+	if len(members) < limit {
+		hasMoreJobs = false
+	}
+	return hasMoreJobs, nil
 }

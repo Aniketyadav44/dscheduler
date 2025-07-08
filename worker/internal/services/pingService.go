@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Aniketyadav44/dscheduler/worker/internal/models"
 )
@@ -13,7 +14,10 @@ func processPingJob(job *models.Job) (string, error) {
 		return "", fmt.Errorf("invalid url: %s", job.Payload["url"])
 	}
 
-	resp, err := http.Get(url)
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}

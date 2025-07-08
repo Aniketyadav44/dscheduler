@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Aniketyadav44/dscheduler/worker/internal/models"
 )
@@ -21,7 +22,10 @@ func processSlackJob(job *models.Job) (string, error) {
 
 	body := fmt.Sprintf("{\"text\": \"%s\"}", msg)
 
-	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	res, err := client.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
 	if err != nil {
 		return "", fmt.Errorf("error sending message: %s", err.Error())
 	}
