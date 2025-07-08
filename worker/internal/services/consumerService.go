@@ -65,7 +65,7 @@ func (c *Consumer) Start() {
 					Streams:  []string{REDIS_JOBS_STREAM_KEY, ">"},
 					Group:    REDIS_STREAM_GROUP_KEY,
 					Consumer: c.name,
-					Count:    20,
+					Count:    500,
 					Block:    5 * time.Second,
 				}).Result()
 				if err != nil && err != redis.Nil {

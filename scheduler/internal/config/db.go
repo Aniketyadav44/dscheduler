@@ -8,7 +8,7 @@ import (
 )
 
 func loadDb(pgHost, pgPort, pgUser, pgPass, pgDbName string) (*sql.DB, error) {
-	pgConn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", pgUser, pgPass, pgHost, pgPort, pgDbName)
+	pgConn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require", pgUser, pgPass, pgHost, pgPort, pgDbName)
 
 	db, err := sql.Open("postgres", pgConn)
 	if err != nil {

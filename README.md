@@ -1,4 +1,4 @@
-# Distribute Task Scheduler
+# Distributed Task Scheduler
 
 This is a distributed task scheduler service.
 It contains dashboard service, scheduler service and worker service designed for processing massive workload.
@@ -64,3 +64,33 @@ The worker services are part of a consumer group listening over this stream. Usi
 4. If the job execution was success, we make an entry in the `job_runs` table with `completed` status and reset the `retries` count of that job to 0 in `jobs` table. Then that job message is acknowledged using `XAck` and deleted from the stream using `XDel`.
 5. If the job execution fails, we first get the `retries` count of that job from `jobs` table. If the `retries` count is less than 3, we make an entry in `job_runs` table with `failed` status and increment the `retries` count of that job in `jobs` table. Then the job message is acknowledged and deleted from stream. Then a new entry of that job is published to the stream for further retries using `XAdd`.
 6. If on failed job execution, we get the `retries` count >= 3, we make an entry in the `job_runs` table with `permanently_failed` status and reset the `retries` count to 0 for that job in `jobs` table. Then the job message is acknowledged and deleted from stream.
+
+## Testing
+
+For testing, I deployed the services using AWS ECS with Fargate.
+
+#### Configurations:
+
+- dashboard: 1 instance
+- scheduler: 3 instances
+- worker: 5 instances
+- Fargate specs: 1 vCPU and 2GB Memory
+- Postgres: Used RDS
+- Redis: Installed on t2.medium EC2
+
+#### Creating load:
+
+For creating jobs, i used `generate_insert.py`, which generates job insert batches with provided UTC hour, minutes.
+
+It also has parameters to generate N jobs for given heavy_minutes list.
+
+I created jobs for a 10 min range, where each min can have 1000 to 5000 jobs and some minutes can have 10000 jobs.
+
+The testing batch that i used had 60k+ jobs for a 10 min range.
+
+#### Observation:
+
+- The Batch processing from DB worked well with redis lock. Only one instance processed the batch and other exited properly due to no lock.
+- The insertion of jobs into Redis sorted set was very quick. For highest 10k jobs, it only took some milliseconds.
+- On worker end, consuming jobs from redis stream was slow i.e ~10k jobs/min(plus failed jobs requeued for retries). There is need to adjust the batch count from workers in the consumer group considering highest load.
+- The slow worker processing can also be solved by increasing number of workers. Having more workers parallely can distribute the load.
