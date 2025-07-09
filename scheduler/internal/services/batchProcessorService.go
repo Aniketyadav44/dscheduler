@@ -72,6 +72,7 @@ func (b *BatchProcessor) Start() {
 func (b *BatchProcessor) Stop() {
 	log.Println("BATCH_PROCESSOR: Stopping batch processor...")
 	b.done <- true
+	close(b.done)
 }
 
 // Pull job from db and pushes to ZSET with lock check. 3 retries on error

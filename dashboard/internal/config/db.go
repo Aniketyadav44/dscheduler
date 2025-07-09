@@ -7,10 +7,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func loadDb(pgHost, pgPort, pgUser, pgPass, pgDbName string) (*sql.DB, error) {
-	pgConn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require", pgUser, pgPass, pgHost, pgPort, pgDbName)
+func loadDb(pgUrl string) (*sql.DB, error) {
 
-	db, err := sql.Open("postgres", pgConn)
+	db, err := sql.Open("postgres", pgUrl)
 	if err != nil {
 		return nil, fmt.Errorf("error in loading db: %s", err.Error())
 	}

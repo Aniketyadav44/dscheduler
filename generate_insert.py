@@ -6,12 +6,12 @@ from datetime import datetime, timedelta
 # 🔧 Configurable Variables
 # -------------------------
 
-hour = 11                    # UTC hour
-minute_start = 31
-minute_end = 40             # inclusive
+hour = 6                    # UTC hour
+minute_start = 1
+minute_end = 10             # inclusive
 
-heavy_minutes = ["11:32", "11:35", "11:37"]
-heavy_jobs_count = 10000
+heavy_minutes = ["06:01", "06:05", "06:07"]
+heavy_jobs_count = 20000
 
 min_jobs = 1000
 max_jobs = 5000

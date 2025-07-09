@@ -7,9 +7,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func loadRedis(host, port string) (*redis.Client, error) {
+func loadRedis(url, pass string) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr: host + ":" + port,
+		Addr:     url,
+		Password: pass,
 	})
 
 	if err := client.Ping(context.Background()).Err(); err != nil {

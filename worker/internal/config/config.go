@@ -17,20 +17,16 @@ func LoadConfig() (*Config, error) {
 	// 	return nil, fmt.Errorf("error in loading env: %s", err.Error())
 	// }
 
-	pgHost := os.Getenv("PG_HOST")
-	pgPort := os.Getenv("PG_PORT")
-	pgUser := os.Getenv("PG_USER")
-	pgPass := os.Getenv("PG_PASS")
-	pgDbName := os.Getenv("PG_DBNAME")
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
+	pgUrl := os.Getenv("DB_URL")
+	redisUrl := os.Getenv("REDIS_URL")
+	redisPass := os.Getenv("REDIS_PASS")
 
-	db, err := loadDb(pgHost, pgPort, pgUser, pgPass, pgDbName)
+	db, err := loadDb(pgUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	redisClient, err := loadRedis(redisHost, redisPort)
+	redisClient, err := loadRedis(redisUrl, redisPass)
 	if err != nil {
 		return nil, err
 	}

@@ -65,6 +65,7 @@ func (p *Publisher) Start() {
 func (p *Publisher) Stop() {
 	log.Println("PUBLISHER: Stopping job publisher...")
 	p.done <- true
+	close(p.done)
 }
 
 func (p *Publisher) publishToStream(t time.Time) (bool, error) {

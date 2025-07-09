@@ -17,13 +17,9 @@ func LoadConfig() (*Config, error) {
 	// }
 
 	dashboardPort := os.Getenv("DASHBOARD_PORT")
-	pgHost := os.Getenv("PG_HOST")
-	pgPort := os.Getenv("PG_PORT")
-	pgUser := os.Getenv("PG_USER")
-	pgPass := os.Getenv("PG_PASS")
-	pgDbName := os.Getenv("PG_DBNAME")
+	pgUrl := os.Getenv("DB_URL")
 
-	db, err := loadDb(pgHost, pgPort, pgUser, pgPass, pgDbName)
+	db, err := loadDb(pgUrl)
 	if err != nil {
 		return nil, fmt.Errorf("error in loading db:%s ", err.Error())
 	}

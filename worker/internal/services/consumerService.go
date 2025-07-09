@@ -17,6 +17,7 @@ import (
 const REDIS_JOBS_STREAM_KEY string = "job_stream"
 const REDIS_STREAM_GROUP_KEY string = "job_stream_group"
 const MAX_JOB_RETRIES int = 3
+const WORKERPOOL_COUNT int = 10
 
 // job statuses
 const (
@@ -26,20 +27,22 @@ const (
 )
 
 type Consumer struct {
-	dbService *DBService
-	redis     *redis.Client
-	name      string
-	done      chan bool
+	dbService      *DBService
+	redis          *redis.Client
+	name           string
+	done           chan bool
+	workerPoolChan chan *redis.XMessage
 }
 
-func NewConsumer(dbService *DBService, redis *redis.Client) *Consumer {
+func NewConsumer(dbService *DBService, r *redis.Client) *Consumer {
 	hostname, _ := os.Hostname()
 	consumerName := fmt.Sprintf("%s|%d", hostname, os.Getpid())
 	return &Consumer{
-		dbService: dbService,
-		redis:     redis,
-		name:      consumerName,
-		done:      make(chan bool),
+		dbService:      dbService,
+		redis:          r,
+		name:           consumerName,
+		done:           make(chan bool),
+		workerPoolChan: make(chan *redis.XMessage),
 	}
 }
 
@@ -65,7 +68,7 @@ func (c *Consumer) Start() {
 					Streams:  []string{REDIS_JOBS_STREAM_KEY, ">"},
 					Group:    REDIS_STREAM_GROUP_KEY,
 					Consumer: c.name,
-					Count:    500,
+					Count:    1000,
 					Block:    5 * time.Second,
 				}).Result()
 				if err != nil && err != redis.Nil {
@@ -75,7 +78,7 @@ func (c *Consumer) Start() {
 
 				for _, stream := range res {
 					for _, msg := range stream.Messages {
-						c.processJob(&msg)
+						c.workerPoolChan <- &msg
 					}
 				}
 			}
@@ -84,11 +87,23 @@ func (c *Consumer) Start() {
 	// why 20 count and 5 second block?
 	// we have 5 second timeouts for each job execution with their retry & status writes to jobs & job runs table
 	// so consider upper case, 20 jobs can take 100s on each instance
+
+	// starting a worker pool
+	for i := 1; i <= WORKERPOOL_COUNT; i++ {
+		go func(id int) {
+			log.Printf("CONSUMER: [%s] WORKERPOOL - starting goroutine: %d", c.name, id)
+			for jobMsg := range c.workerPoolChan {
+				c.processJob(jobMsg, id)
+			}
+		}(i)
+	}
 }
 
 func (c *Consumer) Stop() {
 	log.Printf("CONSUMER: [%s] stopping consumer service...", c.name)
 	c.done <- true
+	close(c.done)
+	close(c.workerPoolChan)
 
 	// deleting this consumer from the consumer group
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -114,9 +129,9 @@ func (c *Consumer) checkAndCreateConsumerGroup() error {
 }
 
 // processing a job
-func (c *Consumer) processJob(msg *redis.XMessage) {
+func (c *Consumer) processJob(msg *redis.XMessage, jobId int) {
 	jobStr := msg.Values["job"].(string)
-	fmt.Printf("CONSUMER: [%s] processing job: msgID: %s\n", c.name, msg.ID)
+	fmt.Printf("CONSUMER: [%s] processing job: msgID: %s at worker goroutine: %d\n", c.name, msg.ID, jobId)
 
 	var job models.Job
 	if err := json.Unmarshal([]byte(jobStr), &job); err != nil {
